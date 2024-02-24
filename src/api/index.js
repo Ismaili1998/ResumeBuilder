@@ -1,6 +1,6 @@
-import { collection, doc, onSnapshot, orderBy, query, setDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase.config";
-
+import { toast } from "react-toastify";
 
 export const getUserDetail = () => {
 
@@ -43,6 +43,107 @@ export const getTemplates = () => {
         });
 
         // Returning the unsubscribe function to detach the listener when necessary
+        return unsubscribe;
+    });
+};
+
+export const saveToCollections = async (user, data) => {
+    if (!user?.collections?.includes(data?._id)) {
+        try {
+            const docRef = doc(db, 'users', user?.uid);
+            await updateDoc(docRef, {
+                collections: arrayUnion(data?._id), // Should it be data?._id instead of data?.id?
+            });
+            toast.success('Saved To Collections');
+        } catch (err) {
+            toast.error(`Error: ${err.message}`);
+        }
+    } else {
+        try {
+            const docRef = doc(db, 'users', user?.uid);
+            await updateDoc(docRef, {
+                collections: arrayRemove(data?._id), // Should it be data?._id instead of data?.id?
+            });
+            toast.success('Removed from Collections');
+        } catch (err) {
+            toast.error(`Error: ${err.message}`);
+        }
+
+    }
+};
+
+export const saveToUserExperiences = async (user, experience) => {
+    try {
+        const docRef = doc(db, 'users', user?.uid);
+        // If experience is not already present, add it
+        if (!user?.experiences?.some(exp => exp.id === experience.id)) {
+
+            await updateDoc(docRef, {
+                experiences: arrayUnion(experience),
+            });
+            console.log('Saved To experiences' + experience.id);
+
+            // If experience is already present, update it
+        } else {
+            await updateDoc(docRef, {
+                experiences: user.experiences.map(exp => (exp.id === experience.id ? experience : exp)),
+            });
+            console.log('Updated successfully' + experience.id);
+        }
+    } catch (err) {
+        toast.error(`Error: ${err.message}`);
+    }
+};
+
+
+export const saveToFavourites = async (user, data) => {
+    if (!data?.favourites?.includes(user?.uid)) {
+        try {
+            const docRef = doc(db, 'templates', data?._id);
+            await updateDoc(docRef, {
+                favourites: arrayUnion(user?.uid), // Should it be data?._id instead of data?.id?
+            });
+            toast.success('Saved To Favourites');
+        } catch (err) {
+            toast.error(`Error: ${err.message}`);
+        }
+    } else {
+        try {
+            const docRef = doc(db, 'templates', data?._id);
+            await updateDoc(docRef, {
+                favourites: arrayRemove(user?.uid), // Should it be data?._id instead of data?.id?
+            });
+            toast.success('Removed from Favourites');
+        } catch (err) {
+            toast.error(`Error: ${err.message}`);
+        }
+
+    }
+};
+
+export const getTemplateDetails = async (templateId) => {
+    return new Promise((resolve, reject) => {
+        const unsubscribe = onSnapshot(doc(db, 'templates', templateId), (doc) => {
+            if (doc.exists()) {
+                resolve(doc.data());
+            } else {
+                reject(new Error('Template not found'));
+            }
+        });
+        // Returning the unsubscribe function to allow cleanup
+        return unsubscribe;
+    });
+};
+
+export const getTemplateDetailEditByUser = (uid, id) => {
+    return new Promise((resolve, reject) => {
+        const unsubscribe = onSnapshot(
+            doc(db, "users", uid, "resumes", id),
+            (doc) => {
+                resolve(doc.data());
+            }
+        );
+
         return unsubscribe;
     });
 };

@@ -1,3 +1,4 @@
+import { Template1, Template2 } from "../designs";
 export const adminsId = ['107074183125717227244']
 export const tags = [
     'SoftwareEngineering',
@@ -18,4 +19,10 @@ export const tags = [
     'TechInnovation',
     'ITInfrastructure',
     'ITLeadership'
+];
+
+
+export const TemplatesData = [
+    { id: `template-${Date.now()}`, name: "Template1", component: Template1 },
+    { id: `template-${Date.now()}`, name: "Template2", component: Template2 },
 ];

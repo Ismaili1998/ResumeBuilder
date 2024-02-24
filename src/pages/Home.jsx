@@ -11,6 +11,7 @@ import CreateResume from './CreateResume'
 import ResumeDetail from './ResumeDetail'
 
 export default function Home() {
+
     return (
         <div className='overflow-y-auto'>
             <Header></Header>

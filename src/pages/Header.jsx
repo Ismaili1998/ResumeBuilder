@@ -8,16 +8,35 @@ import { Link } from 'react-router-dom';
 import { HiLogout } from 'react-icons/hi'
 import { slideUpDownMenu } from '../animations';
 import { adminsId } from '../utils/helpers';
+import useFilters from '../hooks/useFilters';
 export default function Header() {
 
   const { data, isLoading, isError } = useUser();
   const [isMenu, setIsMenu] = useState(false);
   const queryClient = useQueryClient();
+  const { data: filtersData } = useFilters();
+
   const signOutUser = async () => {
     await auth.signOut().then(() => {
       queryClient.setQueryData("user", null)
     });
   };
+
+  const handleSearchTerm = (e) => {
+    console.log(e.target.value)
+    queryClient.setQueryData("globalFilter", {
+      ...queryClient.getQueryData("globalFilter"),
+      searchTerm: e.target.value
+    });
+  };
+
+  const clearFilter = (e) => {
+    queryClient.setQueryData("globalFilter", {
+      ...queryClient.getQueryData("globalFilter"),
+      searchTerm: ""
+    });
+  };
+
 
   return (
     <div>
@@ -74,7 +93,7 @@ export default function Header() {
 
                               {/* Menu */}
                               <div className="w-full">
-                                <Link to="/profile" className="text-sm block py-1 hover:text-blue-600">
+                                <Link to={`/profile/${data?.uid}`} className="text-sm block py-1 hover:text-blue-600">
                                   My account
                                 </Link>
                                 {adminsId.includes(data?.uid) &&
@@ -137,13 +156,24 @@ export default function Header() {
               Menu 3
             </a>
           </div>
-          <div class="relative mx-auto text-gray-600 lg:block hidden">
+          <div class="flex-1 border Mborder-gray-300 px-4 py-1 rounded-ad
+            flex items-center justify-between bg-gray-200">
             <input
               class="border-2 border-gray-300 bg-white h-10 pl-2 pr-8 rounded-lg text-sm focus:outline-none"
-              type="search" name="search" placeholder="Search" />
-            <button type="submit" class="absolute right-0 top-0 mt-3 mr-2">
-
-            </button>
+              onChange={handleSearchTerm}
+              value={filtersData?.searchTerm ? filtersData.searchTerm : ""}
+              type="text"
+              placeholder="Search" />
+            {filtersData && filtersData.searchTerm && filtersData.searchTerm.length > 0 &&
+              <AnimatePresence>
+                <motion.div
+                  onClick={clearFilter}
+                  className="w-8 h-8 flex items-center justify-center bg-gray-300 rounded-lg cursor-pointer active:scale-95 duration-150"
+                >
+                  <p className="text-2xl text-black">x</p>
+                </motion.div>
+              </AnimatePresence>
+            }
           </div>
           <div class="flex ">
             <a href="#"

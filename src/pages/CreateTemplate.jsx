@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { PuffLoader } from 'react-spinners';
 import { FaTrash, FaUpload } from 'react-icons/fa6';
 import { db, storage } from '../config/firebase.config';
@@ -7,9 +7,12 @@ import { ref } from 'firebase/storage';
 import { uploadBytesResumable } from 'firebase/storage';
 import { deleteObject } from 'firebase/storage';
 import { getDownloadURL } from 'firebase/storage';
-import { tags } from '../utils/helpers';
+import { adminsId, tags } from '../utils/helpers';
 import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import useTemplates from '../hooks/useTemplates';
+import { useNavigate } from 'react-router-dom';
+import useUser from '../hooks/useUser';
+
 
 export default function CreateTemplate() {
 
@@ -25,6 +28,10 @@ export default function CreateTemplate() {
     });
 
     const [selectedTags, setselectedTags] = useState([]);
+
+
+    const { data: user, isLoading, isError } = useUser();
+    const navigate = useNavigate()
 
     const { data: templates,
         isError: templateIsError,
@@ -127,7 +134,10 @@ export default function CreateTemplate() {
         };
 
         await setDoc(doc(db, "templates", id), _doc).then(() => {
-            setFormData((prevData) => ({ ...prevData, title: '', imageURL: '' }));
+            setFormData((prevData) => ({
+                ...prevData, title
+                    : '', imageURL: ''
+            }));
             setImageAsset((prevAsset) => ({ ...prevAsset, url: null }));
             setselectedTags([]);
             templateRefetch();
@@ -150,6 +160,13 @@ export default function CreateTemplate() {
             toast.error(`Error: ${err.message}`); // Fixed syntax in error message interpolation
         });
     }
+
+    useEffect(() => {
+        if (isLoading && adminsId.includes(user?.uid)) {
+            navigate("/", { replace: true });
+        }
+    }, [user, isLoading]);
+
 
 
 
