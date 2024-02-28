@@ -13,8 +13,6 @@ export default function HomeContainer() {
         refetch: temp_refetch,
     } = useTemplates();
 
-    console.log(templates)
-
     if (temp_isLoading) {
         return <MainSpinner />;
     }

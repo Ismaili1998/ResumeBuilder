@@ -3,24 +3,36 @@ import { CgArrowDown, CgArrowUp } from "react-icons/cg";
 import { toast } from 'react-toastify';
 import React, { useRef, useEffect, useState } from 'react';
 import useUser from '../../hooks/useUser';
-import { db } from '../../config/firebase.config';
 import ContentEditable from "react-contenteditable";
-import { saveToUserExperiences } from '../../api';
+import { useLocation } from 'react-router-dom';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase.config';
 
-export default function Experience() {
+const Experience = ({ data }) => {
+    const initialExperience = [
+        {
+            id: Date.now(),
+            title: 'Position title',
+            company: 'company name',
+            year: '2020 - Present',
+            description: 'description...',
+            achievements: []
+        },
+    ];
 
-    const { data: user, refetch: userRefetch } = useUser();
-    const [experiences, setExperiences] = useState(user?.experiences);
+    const { pathname } = useLocation();
+    const templateName = pathname?.split("/")?.slice(-1)[0];
+
+    const [experiences, setExperiences] = useState(data || initialExperience);
     const [isEdit, setIsEdit] = useState(-1);
+    const [pushData, setPushData] = useState(false);
+    const { data: user } = useUser();
     const containerRef = useRef(null);
 
     const handleClickOutside = (event) => {
         if (containerRef.current && !containerRef.current.contains(event.target) && isEdit != -1) {
             setIsEdit(-1);
-            console.log("push to cloud experience n: " + isEdit)
-            saveToUserExperiences(user, experiences[isEdit])
-            userRefetch()
-
+            setPushData(!pushData);
         }
     };
 
@@ -31,13 +43,12 @@ export default function Experience() {
         };
     });
 
-
-
     const removeExperience = (id) => {
-        setIsEdit(-1)
         if (experiences.length > 1) {
             const updatedExperiences = experiences.filter((experience) => experience.id !== id);
-            setExperiences(updatedExperiences);
+            setExperiences(updatedExperiences)
+            setIsEdit(-1)
+            setPushData(!pushData)
         } else {
             toast.info('Only one experience left ! ')
         }
@@ -45,42 +56,50 @@ export default function Experience() {
     };
 
     const newExperience = (index) => {
-        setIsEdit(-1);
-        const newId = `${Date.now()}`;;
-        const newExperience = {
-            id: newId,
-            title: 'Position title',
-            company: 'company name',
-            year: '2020 - Present',
-            description: 'description...',
-            achievements: []
-        };
-        setExperiences((prevExperiences) => [
-            ...prevExperiences.slice(0, index + 1),
-            newExperience,
-            ...prevExperiences.slice(index + 1),
-        ]);
+        if (experiences.length < 50) {
+            const newExperience = {
+                id: Date.now(),
+                title: 'Position title',
+                company: 'company name',
+                year: '2020 - Present',
+                description: 'description...',
+                achievements: []
+            };
+            let updatedExperiences = [...experiences];
+            updatedExperiences.splice(index + 1, 0, newExperience);
+            setExperiences(updatedExperiences);
+            setIsEdit(-1);
+        } else {
+            toast.info('Are you sure, you have more thn 50 experiences ?')
+        }
+
+
     };
+
 
     const moveDown = (index) => {
         if (index + 1 < experiences.length) {
-            setIsEdit(-1);
             const updatedExperiences = [...experiences]; // Create a copy of the array
             const experience = updatedExperiences[index];
             updatedExperiences[index] = updatedExperiences[index + 1];
             updatedExperiences[index + 1] = experience;
             setExperiences(updatedExperiences); // Update the state with the new array
+            setIsEdit(-1);
+            setPushData(!pushData)
+
         }
     };
 
     const moveUp = (index) => {
         if (index > 0) {
-            setIsEdit(-1);
             const updatedExperiences = [...experiences]; // Create a copy of the array
             const experience = updatedExperiences[index];
             updatedExperiences[index] = updatedExperiences[index - 1];
             updatedExperiences[index - 1] = experience;
             setExperiences(updatedExperiences); // Update the state with the new array
+            setIsEdit(-1);
+            setPushData(!pushData)
+
         }
     };
 
@@ -93,25 +112,37 @@ export default function Experience() {
     const handleFocus = (index) => {
         if (isEdit != index) {
             setIsEdit(index)
-
             if (isEdit != -1) {
-                console.log("push to cloud experience n:" + isEdit)
-                saveToUserExperiences(user, experiences[isEdit])
-                userRefetch()
-            }
+                setPushData(!pushData)
 
+            }
         }
     }
 
+    const saveExperiences = async () => {
+        const resume_id = `${templateName}-${user?.uid}`;
+        try {
+            await updateDoc(doc(db, "users", user?.uid, "resumes", resume_id), {
+                experiences: experiences
+            });
+            // toast.success(`Experiences Updated`);
+        } catch (err) {
+            toast.error(`Error: ${err.message}`);
+        }
+    };
 
+    useEffect(() => {
+        {
+            saveExperiences()
+        }
+    }, [pushData])
 
 
     return (
         <ol class="relative border-s border-gray-200 dark:border-gray-700"
             ref={containerRef}
-
         >
-            {user?.experiences && user.experiences.map((experience, index) => (
+            {experiences.map((experience, index) => (
 
                 <li class="mb-6 ms-4"
                     key={index}
@@ -145,9 +176,9 @@ export default function Experience() {
                             handleFocus(index)}
                     >
                         <div className="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
-                        <ContentEditable
+                        <input
                             className="text-lg font-bold text-blue-500 dark:text-white focus:outline-none focus:border-b-2 border-blue-500"
-                            html={experience.title}// innerHTML of the editable div
+                            value={experience.title}// innerHTML of the editable div
                             disabled={false} // use true to disable edition
                             key='title'
                             onChange={(evt) => handleChange(evt, 'title', index)} // handle innerHTML change
@@ -195,3 +226,5 @@ export default function Experience() {
         </ol >
     )
 }
+
+export default Experience;

@@ -3,6 +3,8 @@ export { default as Home } from "./Home"
 export { default as CreateTemplate } from "./CreateTemplate"
 export { default as ResumeDetail } from "./ResumeDetail"
 export { default as UserProfile } from "./UserProfile"
+export { default as Tst } from "./Tst"
+
 
 
 

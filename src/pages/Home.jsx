@@ -9,12 +9,12 @@ import HomeContainer from './HomeContainer'
 import UserProfile from './UserProfile'
 import CreateResume from './CreateResume'
 import ResumeDetail from './ResumeDetail'
-
+import Tst from './Tst'
 export default function Home() {
 
     return (
         <div className='overflow-y-auto'>
-            <Header></Header>
+            {/* <Header></Header> */}
             <main className="w-full">
                 <Suspense fallback={<MainSpinner />}>
                     <Routes>
@@ -23,6 +23,7 @@ export default function Home() {
                         <Route path="/profile/:uid" element={<UserProfile />} />
                         <Route path="/resume/*" element={<CreateResume />} />
                         <Route path="/resumeDetail/:templateID" element={<ResumeDetail />} />
+                        <Route path="/tst/" element={<Tst />} />
                     </Routes>
                 </Suspense>
             </main>

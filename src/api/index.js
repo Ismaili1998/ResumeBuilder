@@ -1,4 +1,4 @@
-import { arrayRemove, arrayUnion, collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, collection, doc, getDoc, onSnapshot, orderBy, query, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase.config";
 import { toast } from "react-toastify";
 
@@ -135,15 +135,46 @@ export const getTemplateDetails = async (templateId) => {
     });
 };
 
-export const getTemplateDetailEditByUser = (uid, id) => {
-    return new Promise((resolve, reject) => {
-        const unsubscribe = onSnapshot(
-            doc(db, "users", uid, "resumes", id),
-            (doc) => {
-                resolve(doc.data());
-            }
-        );
 
-        return unsubscribe;
+
+export const getTemplateDetailEditByUser = (uid, id) => {
+    return new Promise(async (resolve, reject) => {
+        const docRef = doc(db, "users", uid, "resumes", id);
+        try {
+            // Check if the document exists
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                // Document exists, proceed with onSnapshot
+                const unsubscribe = onSnapshot(docRef, (doc) => {
+                    resolve(doc.data());
+                });
+
+                return unsubscribe;
+            } else {
+                // Document doesn't exist
+                const _doc = {
+                    resume_id: id
+                };
+                setDoc(doc(db, "users", uid, "resumes", id), _doc)
+                    .catch((err) => {
+                        toast.error(`Error : ${err.message}`);
+                    });
+                resolve([]);
+            }
+        } catch (error) {
+            reject(error);
+        }
     });
 };
+// export const getTemplateDetailEditByUser = (uid, id) => {
+//     return new Promise((resolve, reject) => {
+//         const unsubscribe = onSnapshot(
+//             doc(db, "users", uid, "resumes", id),
+//             (doc) => {
+//                 resolve(doc.data());
+//             }
+//         );
+
+//         return unsubscribe;
+//     });
+// };
